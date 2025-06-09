@@ -14,7 +14,8 @@ We aim to evaluate the causal effect of coupon usage on product conversion using
 
 
 
-**Comment**: Technically, all customers were offered a coupon, but only some chose to use it. Therefore, the estimated causal effect pertains to the impact of using a coupon on the conversion rate. As there is no data about customers that did not receive any coupons, this analysis critically relies on the assumption that receiving a coupon does not influence the conversion other than through using the coupon (similar to exclusion restriction in iv settings).
+**Comment**: All customers were offered a coupon, but only some chose to use it. Therefore, the estimated causal effect pertains to the impact of using a coupon on the conversion rate. As there is no data about customers that did not receive any coupons, drawing causal conclusion about the effect of receiving a coupon critically relies on the assumption that
+the offer itself does not influence conversion except through its use.
 
 **References**: Most of this analysis follows standard causal inference literature, for details we refer to, e.g., Causal Inference: What if by Miguel Hernán and James Robins or Causal Inference: The Mixtape by Scott Cunningham.  We use the DoubleML package to implement the main model based on Chernozhukov et al. (2018). For details on DAGs, and in particular the backdoor criterion, we refer to Judea Pearl's Causality book.
 
