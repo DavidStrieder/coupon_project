@@ -82,7 +82,7 @@ The first step of causal inference is to reason about underlying causal structur
 - **causal markov condition** (independent mechanism, conditional independence implied by d-separation)
 - **and acyclicity.**
 
-**Comments**: Adjusting for all pre-treatment covariates satisfies the backdoor criterion, guaranteeing unbiased effect estimation. However, smaller adjustment sets (e.g., a subset of covariates) may improve efficiency if they block all backdoor paths. For example, selecting covariates with strong marginal correlations with treatment could suffice if they block all confounding paths and yield better performance. However, this relies on correctly identifying a minimal sufficient adjustment set (minimal causal DAG), which requires additional conditional independence assumptions.
+**Comment**: Adjusting for all pre-treatment covariates satisfies the backdoor criterion, guaranteeing unbiased effect estimation. However, smaller adjustment sets (e.g., a subset of covariates) may improve efficiency if they block all backdoor paths. For example, selecting covariates with strong marginal correlations with treatment could suffice if they block all confounding paths and yield better performance. However, this relies on correctly identifying a minimal sufficient adjustment set (minimal causal DAG), which requires additional conditional independence assumptions.
 
 
 ![png](coupon_files/dag.png)
@@ -327,55 +327,7 @@ plt.show()
 
     
 ![png](coupon_files/coupon_20_1.png)
-    
-
-
-
-```python
-# CATE estimation by X10 (linear projection)
-design_matrix=patsy.dmatrix("x", {"x": df['X10']})
-spline_basis = pd.DataFrame(design_matrix)
-cate = dml_irm_rf.cate(spline_basis)
-print(cate)
-
-# visualization 
-x_grid = {"x": np.linspace(min(df['X10']), max(df['X10']), 100)}
-spline_grid = pd.DataFrame(patsy.build_design_matrices([design_matrix.design_info], x_grid)[0])
-df_cate = cate.confint(spline_grid, level=0.95, joint=True, n_rep_boot=2000)
-
-df_cate['x'] = x_grid['x']
-true_fitted_spline = sm.OLS(df['ite'], spline_basis).fit()
-df_cate['ite_fitted'] = true_fitted_spline.predict(spline_grid)
-
-fig, ax = plt.subplots()
-ax.plot(df_cate['x'],df_cate['effect'], color='#238B45', label='Estimated Effect')
-ax.plot(df_cate['x'],df_cate['ite_fitted'], color='#C51B8A', label='Fitted True Effect')
-ax.scatter(df['X10'], df['ite'], color='#969696', alpha=0.1, s=10, label='Observed ITE', zorder=1)
-ax.fill_between(df_cate['x'], df_cate['2.5 %'], df_cate['97.5 %'], color='#A1D99B', alpha=.3, label='Confidence Interval')
-
-plt.legend()
-plt.title('CATE X10')
-plt.xlabel('x')
-_ =  plt.ylabel('Effect and 95%-CI')
-
-plt.show()
-```
-
-    ================== DoubleMLBLP Object ==================
-    
-    ------------------ Fit summary ------------------
-           coef   std err         t         P>|t|    [0.025    0.975]
-    0  0.028170  0.009321  3.022285  2.508742e-03  0.009902  0.046439
-    1 -0.057558  0.009268 -6.210573  5.279179e-10 -0.075722 -0.039393
-
-
-
-    
-![png](coupon_files/coupon_21_1.png)
-    
-
-
-The covariate X10 seems to have a linear effect on the conversion rate.
+  
 
 
 ```python
