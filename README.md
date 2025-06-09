@@ -36,7 +36,7 @@ print(df.mean())
 print(df.std())
 ```
 
-For illustration, we compute the true average treatment effect. Note that the naive difference of treated vs control, without causal considerations, would imply a different sign for the effect. This is not a randomized study, thus, we have to adjust for confounding or imbalance in the groups, e.g. using causal inference approaches.
+For illustration, we compute the true average treatment effect. Note that the naive difference of treated vs control, without causal considerations, would imply a different sign for the effect. This is not a randomized study, thus, we have to adjust for confounding or imbalance in the groups, i.e., use causal inference approaches.
 
 We highlight the (marginal) correlation between treatment and the covariates. 
 
@@ -77,12 +77,12 @@ for col in covariates:
 
 ### Causal Framework
 
-The first step of causal inference is to reason about underlying causal structure. Here, causal discovery is not necessary, and we specify a DAG based on domain knowledge (e.g. time constraints pre-/post-treatment) and minimal assumptions (not necessarily minimal causal dag), where missing edges encode hypothesized absences of direct causal effects. We emphasize that specifying such a causal DAG in particular assumes 
+The first step of causal inference is to reason about the underlying causal structure. Here, causal discovery is not necessary; we specify a DAG based on domain knowledge (e.g. time constraints pre-/post-treatment) and minimal assumptions (not necessarily minimal causal dag), where missing edges encode hypothesized absences of direct causal effects. We emphasize that specifying such a causal DAG assumes 
 - **causal sufficiency** (no unobserved confounding)
 - **causal markov condition** (independent mechanism, conditional independence implied by d-separation)
 - **and acyclicity.**
 
-**Comment**: Adjusting for all pre-treatment covariates satisfies the backdoor criterion, guaranteeing unbiased effect estimation. However, smaller adjustment sets (e.g., a subset of covariates) may improve efficiency if they block all backdoor paths. For example, selecting covariates with strong marginal correlations with treatment could suffice if they block all confounding paths and yield better performance. However, this relies on correctly identifying a minimal sufficient adjustment set (minimal causal DAG), which requires additional conditional independence assumptions.
+**Comment**: The set of all pre-treatment covariates satisfies the backdoor criterion, guaranteeing unbiased effect estimation. However, smaller adjustment sets (e.g., a subset of covariates) may improve efficiency, but crucially, this relies on correctly identifying a minimal sufficient adjustment set (specifying a minimal causal DAG), which requires additional conditional independence assumptions.
 
 
 ![png](coupon_files/dag.png)
@@ -106,12 +106,12 @@ $$
 Using the backdoor criterion this can be expressed as
 
 $$
-\text{ATE} = \mathbb{E}_{X,M} \left[ \mathbb{E}[conversion \mid coupon=1, X, M] - \mathbb{E}[conversion \mid coupon=0, X, M] \right]
+\text{ATE} = \mathbb{E}_{X,M} \left[ \mathbb{E}[conversion \mid coupon=1, X, M] - \mathbb{E}[conversion \mid coupon=0, X, M] \right].
 $$
 
 ### Estimation Approaches
 
-The main remaining challenge is to estimate these conditional expectations from data. We will first highlight some important concepts using simple approaches, before employing more sophisticated models to continue with our analysis. The main assumptions for the following approaches are
+The main remaining challenge is to estimate these conditional expectations from data. We will first highlight some important concepts using simple approaches before employing more sophisticated models to continue with our analysis. The main assumptions that ensure validity of the following approaches are
 - **positivity** (common support, overlap)
 - **conditional** exchangeability (implied by causal sufficiency/no unobserved confounding)
 - **consistency** (implicit in the specification of the causal dag)
@@ -283,7 +283,7 @@ While there seems to be a positive effect in all groups, targeting customers wit
 
 #### Conditional Average Treatment Effects (CATE)
 
-Moreover, we can similarly investigate the effect of specific (continuous) covariates by estimating the conditional treatment effect (CATE). The idea here is to fit a basis expansion (e.g., splines) to the covariate of interest and project the treatment effect onto this basis.
+We can similarly investigate the effect of specific (continuous) covariates by estimating the conditional treatment effect (CATE). The idea here is to fit a basis expansion (e.g., splines) to the covariate of interest and project the treatment effect onto this basis.
 
 
 ```python
