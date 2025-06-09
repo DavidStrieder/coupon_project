@@ -14,17 +14,15 @@ We aim to evaluate the causal effect of coupon usage on product conversion using
 
 
 
->Comment: 
-Technically, all customers were offered a coupon, but only some chose to use it. Therefore, the estimated causal effect pertains to the impact of **using** a coupon on the conversion rate. As there is no data about customers that did not receive any coupons, this analyis critically relies on the assumption that receiving a coupon does not influence the conversion rather other than through using the coupon (similar to exclusion restriction in iv settings).
+**Comment**: Technically, all customers were offered a coupon, but only some chose to use it. Therefore, the estimated causal effect pertains to the impact of using a coupon on the conversion rate. As there is no data about customers that did not receive any coupons, this analysis critically relies on the assumption that receiving a coupon does not influence the conversion rather than through using the coupon (similar to exclusion restriction in iv settings).
 
->References:
-Most of this analysis follows standard causal inference literature, for details we refer to, e.g., Causal Inference: What if by Miguel Hernán and James Robin or Causal Inference: The Mixtape by Scott Cunningham.  We use the DoubleML package to implement the main model based on Chernozhukov et al. (2018). For details on DAGs and in particular the backdoor criterion we refer to Judea Pearl's Causality book.
+**References**: Most of this analysis follows standard causal inference literature, for details we refer to, e.g., Causal Inference: What if by Miguel Hernán and James Robins or Causal Inference: The Mixtape by Scott Cunningham.  We use the DoubleML package to implement the main model based on Chernozhukov et al. (2018). For details on DAGs, and in particular the backdoor criterion, we refer to Judea Pearl's Causality book.
 
 
 
 ### EDA
 
-First, some basic checks. The data does not contain missing values and the covariates are already standardized.
+First, some basic checks. The data does not contain missing values and the covariates appear to be already standardized.
 
 
 ```python
@@ -38,8 +36,7 @@ print(df.mean())
 print(df.std())
 ```
 
-
-For illustration, we compute the true average treatement effect. Note that naive diffenerence of treated vs control without causal considerations would even imply a different sign for the effect. This is not a randomized study, thus, we have to adjust for confounding or imbalance in the groups, e.g. using causal inference approaches.
+For illustration, we compute the true average treatment effect. Note that the naive difference of treated vs control, without causal considerations, would imply a different sign for the effect. This is not a randomized study, thus, we have to adjust for confounding or imbalance in the groups, e.g. using causal inference approaches.
 
 We highlight the (marginal) correlation between treatment and the covariates. 
 
@@ -80,21 +77,19 @@ for col in covariates:
 
 ### Causal Framework
 
-The first step of causal inference is to reason about underlying causal structure. Here, causal discovery is not necessary and we specify a DAG based on domain knowledge (e.g. time constraints pre-/post-treatment) and minimal assumptions (not necessarily minimal causal dag), where missing edges encode hypothesized absences of direct causal effects. We emphasize, specifying such a causal DAG in particular assumes 
-- causal sufficiency (no unobserved confounding)
-- causal markov condition (independent mechanism, condintional independence implied by d-separation)
-- and acyclicity.
+The first step of causal inference is to reason about underlying causal structure. Here, causal discovery is not necessary, and we specify a DAG based on domain knowledge (e.g. time constraints pre-/post-treatment) and minimal assumptions (not necessarily minimal causal dag), where missing edges encode hypothesized absences of direct causal effects. We emphasize that specifying such a causal DAG in particular assumes 
+- **causal sufficiency** (no unobserved confounding)
+- **causal markov condition** (independent mechanism, conditional independence implied by d-separation)
+- **and acyclicity.**
 
-Comments:
-Adjusting for all pre-treatment covariates satisfies the backdoor criterion, guaranteeing unbiased effect estimation. However, smaller adjustment sets (e.g., a subset of covariates) may improve efficiency if they block all backdoor paths. For example, selecting covariates with strong marginal correlations with treatment could suffice if they block all confounding paths and yield better performance. However, this relies on correctly identifying a minimal sufficient adjustment set (minimal causal dag), which requires additional conditional independence assumptions.
+**Comments**: Adjusting for all pre-treatment covariates satisfies the backdoor criterion, guaranteeing unbiased effect estimation. However, smaller adjustment sets (e.g., a subset of covariates) may improve efficiency if they block all backdoor paths. For example, selecting covariates with strong marginal correlations with treatment could suffice if they block all confounding paths and yield better performance. However, this relies on correctly identifying a minimal sufficient adjustment set (minimal causal DAG), which requires additional conditional independence assumptions.
 
 
 ![png](coupon_files/dag.png)
 
-Finding a valid adjustment set is the major causal step in the analyis that relates the interventional quantity of interest to observational data. We emphasize, adjusting for colliders d-connects and introduces bias  (Similarly, adjusting for mediators would block a causal path and introduce bias). Thus, we do not adjust for the post-treatment variables.
+Finding a valid adjustment set is the major causal step in the analysis that relates the interventional quantity of interest to observational data. We emphasize that adjusting for colliders d-connects and introduces bias (similarly, adjusting for mediators would block a causal path and introduce bias). Thus, we do not adjust for the post-treatment variables.
 
-Comment:
-There exist other (graphical) criteria, such as the front-door criterion, that also provide sufficient conditions to identify causal effects from observational data.
+**Comment**: There exist other (graphical) criteria, such as the front-door criterion, that also provide sufficient conditions to identify causal effects from observational data.
 
 
 ```python
@@ -114,10 +109,14 @@ $$
 \text{ATE} = \mathbb{E}_{X,M} \left[ \mathbb{E}[conversion \mid coupon=1, X, M] - \mathbb{E}[conversion \mid coupon=0, X, M] \right]
 $$
 
+### Estimation Approaches
+
 The main remaining challenge is to estimate these conditional expectations from data. We will first highlight some important concepts using simple approaches, before employing more sophisticated models to continue with our analysis. The main assumptions for the following approaches are
-- positivity (common support, overlap)
-- conditional exchangebility (implied by causal sufficiency/no unobserved confounding)
-- consistency (implicit in the specficication of the causal dag)
+- **positivity** (common support, overlap)
+- **conditional** exchangeability (implied by causal sufficiency/no unobserved confounding)
+- **consistency** (implicit in the specification of the causal dag)
+
+#### 1. Inverse Probability Weighting (IPW)
 
 The main idea of ipw is to rebalance the data to mimic a randomized control trial by fitting a treatment model (here logistic regression).
 - validity additionally relies on well-specified treatment model
@@ -165,10 +164,12 @@ print("true average treatment effect:", df['ite'].mean())
     true average treatment effect: 0.03908395919621665
 
 
-We show that the positivity assumption seems to be satisfied, however, the plot also shows the imbalance in treatment vs control. The second plot shows the idea of ipw of reweighting the data to mimic a rct.
+We show that the positivity assumption seems to be satisfied, however, the plot also shows the imbalance in treatment vs control. The second plot shows the idea of ipw of reweighting the data to mimic a RCT.
 
 While still underestimating the causal effect, ipw at least identifies the correct sign compared to the naive approach.
 
+
+#### 2. Outcome Modeling
 
 Another straightforward approach is to fit directly an outcome model to estimate the conditional expectation (here, again, simple logistic regression).
 - validity additionally relies on well-specified outcome model
@@ -190,11 +191,13 @@ print("true average treatment effect:", df['ite'].mean())
     true average treatment effect: 0.03908395919621665
 
 
-To some extend, the logical next step is to employ doubly robust estimation to combine both worlds. As name suggests, the idea is to fit both a treatment and outcome model in an orthogonal way to ensure validity even if one model is misspecified. The double ml approach extends this idea using data splitting to allow the use of more sophisticated models without worrying about overfitting.
+#### 3. Doubly Robust Estimation
+
+To some extent, the logical next step is to employ doubly robust estimation to combine both worlds. As name suggests, the idea is to fit both a treatment and outcome model in an orthogonal way to ensure validity even if one model is misspecified. The double ml approach extends this idea using data splitting to allow the use of more sophisticated models without worrying about overfitting.
 
 
 ```python
-# doubly robust estimation (here usimg doubleml)
+# doubly robust estimation (here using doubleml)
 
 # logistic regression (simple)
 treatment_model = LogisticRegression(max_iter=1000)
@@ -243,9 +246,14 @@ print("true average treatment effect:", df['ite'].mean())
     true average treatment effect: 0.03908395919621665
 
 
-Finally, we estimate the average treatment effect using double ml by fitting a random forest to both, treatement and outcome model. As a sanity check, note, that the true average treatment effect is contained in the the 95% confidence interval. For details on other common choices of models and hyperparameter tuning, we refer to the recent CLeaR paper 'Hyperparameter Tuning for Causal Inference with Double Machine Learning: A Simulation Study' by Philipp Bach et. al.
+Finally, we estimate the average treatment effect using double ml by fitting a random forest to both, treatment and outcome model. As a sanity check, note, that the true average treatment effect is contained in the 95% confidence interval. For details on other common choices of models and hyperparameter tuning, we refer to the recent CLeaR paper 'Hyperparameter Tuning for Causal Inference with Double Machine Learning: A Simulation Study' by Philipp Bach et al.
 
-Moreover, we can now use our fitted model to guide the decision on which customers should receive a coupon. First, we compute the aver grouped by membership level (GATE).
+
+### Treatment Effect Heterogeneity
+
+#### Group Average Treatment Effects (GATE)
+
+Moreover, we can now use our fitted model to guide the decision on which customers should receive a coupon. First, we compute the ATE grouped by membership level (GATE).
 
 
 ```python
@@ -271,9 +279,11 @@ for level in ['membership_level_0', 'membership_level_1', 'membership_level_2']:
     true GATE membership_level_2: 0.018707844852900623
 
 
-While there seems to be a positive effect in all groups, targeting customors with membership level zero seems particularly valuable.
+While there seems to be a positive effect in all groups, targeting customers with membership level zero seems particularly valuable.
 
-Moreoever, we can similarly investigate the effect of specific (continuous) covariates by estimtaing the conditional treatment effeect (CATE). The idea here is to fit a basis expansion (e.g., splines) to the covariate of interest and project the treatment effect onto this basis.
+#### Conditional Average Treatment Effects (CATE)
+
+Moreover, we can similarly investigate the effect of specific (continuous) covariates by estimating the conditional treatment effect (CATE). The idea here is to fit a basis expansion (e.g., splines) to the covariate of interest and project the treatment effect onto this basis.
 
 
 ```python
@@ -415,8 +425,12 @@ plt.show()
 
 The covariate X11 seems to have a non-linear effect on the conversion rate.
 
-Further steps could include investigating counterfactuals (would the customer have benn converted even without a coupon?) and evaluating different policies of assigning coupons based on pre-treatment information (e.g., no coupon if X10>2 or X11>1).
+
+### Conclusion
+
+This analysis demonstrates a pipeline for estimating causal effects from observational data. By leveraging backdoor adjustments and DoubleML, we obtain interpretable and policy-relevant results, despite the limitations of non-randomized designs.
+
+Further steps could include investigating counterfactuals (would the customer have been converted even without a coupon?) and evaluating different policies of assigning coupons based on pre-treatment information (e.g., no coupon if X10>2 or X11>1).
 
 
-Comment:
-All methods seem to underestimate the true average treatment effect. To some extent, this is not necessarily suprising and might indicate confounding/selection bias by purchase intent. In fact, highly motivated buyers (who would convert anyway) might be less likely to use a coupon, because they don’t need the discount.  Conversely, people who choose to use the coupon might coorespond to more hesitant, price-sensitive customers.
+**Comment**: All methods seem to underestimate the true average treatment effect. To some extent, this is not necessarily surprising and might indicate confounding/selection bias by purchase intent. In fact, highly motivated buyers (who would convert anyway) might be less likely to use a coupon, because they don’t need the discount.  Conversely, people who choose to use the coupon might be more hesitant or price-sensitive customers,
