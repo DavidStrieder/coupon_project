@@ -1,26 +1,28 @@
-Problem statement:
-We aim to evaluate the effect of targeted coupon campaigns on product conversion using observational data.
+## Causal Analysis: Targeted Coupon Campaigns
 
-Data:
-The dataset consists of 10,000 observations on newsletter subscribers of an online shop.
-- conversion: Whether the customer bought the product (binary outcome)
-- coupon: Whether the customer used a coupon (binary treatment)
-- pre-treatment variables: 
-    - X1–X14: Customer features (continuous covariates)
-    - membership_level: Customer membership status (categorical, dummy coded)
-- post-treatment variables:
-    - Z: Post-campaign activity score (numeric)
-    - loyality_points: Loyalty points awarded after treatment (numeric)
+### Problem Statement
 
-Comment: 
-Technically, all customers were offered a coupon, but only some chose to use it. Therefore, the estimated causal effect pertains to the impact of using a coupon on the conversion rate. As there is no data about customers that did not receive any coupons, this analyis critically relies on the assumption that receiving a coupon does not influence the conversion rather other than through using the coupon (similar to exclusion restriction in iv settings).
+We aim to evaluate the causal effect of coupon usage on product conversion using observational data from an online shop's newsletter subscribers.
 
-References:
+### Dataset Overview
+
+- **Size**: 10,000 observations
+- **Outcome**: `conversion` (binary)
+- **Treatment**: `coupon` (binary)
+- **Pre-treatment covariates**: `X1`–`X14` (numeric), `membership_level` (categorical, dummy-coded)
+- **Post-treatment variables**: `Z` (activity score), `loyalty_points` (numeric)
+
+
+
+>Comment: 
+Technically, all customers were offered a coupon, but only some chose to use it. Therefore, the estimated causal effect pertains to the impact of **using** a coupon on the conversion rate. As there is no data about customers that did not receive any coupons, this analyis critically relies on the assumption that receiving a coupon does not influence the conversion rather other than through using the coupon (similar to exclusion restriction in iv settings).
+
+>References:
 Most of this analysis follows standard causal inference literature, for details we refer to, e.g., Causal Inference: What if by Miguel Hernán and James Robin or Causal Inference: The Mixtape by Scott Cunningham.  We use the DoubleML package to implement the main model based on Chernozhukov et al. (2018). For details on DAGs and in particular the backdoor criterion we refer to Judea Pearl's Causality book.
 
 
 
-EDA:
+### EDA
 
 First, some basic checks. The data does not contain missing values and the covariates are already standardized.
 
@@ -35,108 +37,6 @@ print(df.isnull().sum())
 print(df.mean())
 print(df.std())
 ```
-
-       conversion  coupon        X0        X1        X2        X3        X4  \
-    0         1.0     1.0 -1.110554 -1.134097  0.128589  0.874238  0.196594   
-    1         0.0     1.0 -0.515260 -0.150295 -0.076850 -0.204064  0.362197   
-    2         0.0     0.0  1.160414 -0.345812  0.441647 -1.084716 -1.837146   
-    3         1.0     0.0 -2.141387 -1.960944 -1.598674 -0.887552 -1.632236   
-    4         0.0     1.0 -0.609404 -0.682008 -1.672801 -1.692626 -2.211051   
-    
-             X5        X6        X7  ...       X11       X12       X13       X14  \
-    0  2.040795  0.354033 -0.766300  ... -0.314289 -0.412576 -0.912329 -0.089548   
-    1  0.573354  0.192715  0.372288  ... -1.663128  0.623341  0.296811 -0.327026   
-    2 -1.207060 -1.399175  0.203727  ...  0.013339 -0.676666 -1.271227  1.215198   
-    3  0.681700  0.656121  0.350065  ...  0.389388  0.401734 -0.050694  0.278126   
-    4 -1.417280  0.670815  1.217301  ... -0.809787  0.067887  0.342862  1.054393   
-    
-       membership_level_0  membership_level_1  membership_level_2         Z  \
-    0                 1.0                 0.0                 0.0  0.216355   
-    1                 1.0                 0.0                 0.0  0.812173   
-    2                 0.0                 0.0                 1.0 -0.170248   
-    3                 1.0                 0.0                 0.0  1.695382   
-    4                 0.0                 1.0                 0.0  2.385743   
-    
-            ite  loyalty_points_awarded  
-    0  0.127304                   185.0  
-    1 -0.010097                    58.0  
-    2  0.045859                    20.0  
-    3  0.054838                   145.0  
-    4  0.059965                    87.0  
-    
-    [5 rows x 23 columns]
-    conversion                0
-    coupon                    0
-    X0                        0
-    X1                        0
-    X2                        0
-    X3                        0
-    X4                        0
-    X5                        0
-    X6                        0
-    X7                        0
-    X8                        0
-    X9                        0
-    X10                       0
-    X11                       0
-    X12                       0
-    X13                       0
-    X14                       0
-    membership_level_0        0
-    membership_level_1        0
-    membership_level_2        0
-    Z                         0
-    ite                       0
-    loyalty_points_awarded    0
-    dtype: int64
-    conversion                 0.281000
-    coupon                     0.505400
-    X0                        -0.009621
-    X1                        -0.005196
-    X2                        -0.013708
-    X3                         0.003931
-    X4                         0.012152
-    X5                         0.005939
-    X6                         0.009743
-    X7                        -0.011308
-    X8                         0.005031
-    X9                        -0.020259
-    X10                       -0.008350
-    X11                       -0.013380
-    X12                       -0.008685
-    X13                       -0.012177
-    X14                       -0.002010
-    membership_level_0         0.397000
-    membership_level_1         0.402600
-    membership_level_2         0.200400
-    Z                          0.002521
-    ite                        0.039084
-    loyalty_points_awarded    55.753600
-    dtype: float64
-    conversion                 0.449510
-    coupon                     0.499996
-    X0                         1.009510
-    X1                         0.998117
-    X2                         0.997201
-    X3                         0.991327
-    X4                         0.995366
-    X5                         1.009885
-    X6                         1.007027
-    X7                         1.006605
-    X8                         1.003369
-    X9                         0.997440
-    X10                        0.991745
-    X11                        0.999227
-    X12                        1.014824
-    X13                        1.004450
-    X14                        1.008623
-    membership_level_0         0.489300
-    membership_level_1         0.490446
-    membership_level_2         0.400320
-    Z                          0.991271
-    ite                        0.062648
-    loyalty_points_awarded    50.821125
-    dtype: float64
 
 
 For illustration, we compute the true average treatement effect. Note that naive diffenerence of treated vs control without causal considerations would even imply a different sign for the effect. This is not a randomized study, thus, we have to adjust for confounding or imbalance in the groups, e.g. using causal inference approaches.
@@ -178,6 +78,8 @@ for col in covariates:
     correlation between X14 and coupon: 0.06124696264329803
 
 
+### Causal Framework
+
 The first step of causal inference is to reason about underlying causal structure. Here, causal discovery is not necessary and we specify a DAG based on domain knowledge (e.g. time constraints pre-/post-treatment) and minimal assumptions (not necessarily minimal causal dag), where missing edges encode hypothesized absences of direct causal effects. We emphasize, specifying such a causal DAG in particular assumes 
 - causal sufficiency (no unobserved confounding)
 - causal markov condition (independent mechanism, condintional independence implied by d-separation)
@@ -185,6 +87,9 @@ The first step of causal inference is to reason about underlying causal structur
 
 Comments:
 Adjusting for all pre-treatment covariates satisfies the backdoor criterion, guaranteeing unbiased effect estimation. However, smaller adjustment sets (e.g., a subset of covariates) may improve efficiency if they block all backdoor paths. For example, selecting covariates with strong marginal correlations with treatment could suffice if they block all confounding paths and yield better performance. However, this relies on correctly identifying a minimal sufficient adjustment set (minimal causal dag), which requires additional conditional independence assumptions.
+
+
+![png](coupon_files/dag.png)
 
 Finding a valid adjustment set is the major causal step in the analyis that relates the interventional quantity of interest to observational data. We emphasize, adjusting for colliders d-connects and introduces bias  (Similarly, adjusting for mediators would block a causal path and introduce bias). Thus, we do not adjust for the post-treatment variables.
 
